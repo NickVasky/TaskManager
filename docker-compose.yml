@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:17.4
+    restart: always
+    container_name: postgres_task_manager
+    environment:
+      POSTGRES_USER: go
+      POSTGRES_PASSWORD: some_secure_passworld
+      POSTGRES_DB: task_manager_db
+    volumes:
+      - ./postgres:/var/lib/postgresql/data/
+    networks:
+      - psql
+    ports:
+      - "25912:5432"
+    configs:
+      - source: psql_init
+        target: /docker-entrypoint-initdb.d/init.sql
+
+configs:
+  psql_init:
+    file: ./init.sql
+
+volumes:
+    postgres:
+  
+networks:
+  psql:
+    driver: bridge
