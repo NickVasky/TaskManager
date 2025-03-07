@@ -28,7 +28,9 @@ type TaskRepo struct {
 	Db *sql.DB
 }
 
-const dbDateFmt = "2006-01-02 15:04:05-07"
+type SessionRepo struct {
+	Db *sql.DB
+}
 
 func NewConnection() *Database {
 	psqlConnStr := fmt.Sprintf(
@@ -56,4 +58,8 @@ func (d *Database) NewUserRepo() *UserRepo {
 
 func (d *Database) NewTaskRepo() *TaskRepo {
 	return &TaskRepo{d.Db}
+}
+
+func (d *Database) NewSessionRepo() *SessionRepo {
+	return &SessionRepo{d.Db}
 }

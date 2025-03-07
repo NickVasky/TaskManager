@@ -8,6 +8,14 @@ BEGIN;
         created_at TIMESTAMP WITH TIME ZONE
     );
 
+    CREATE TABLE IF NOT EXISTS sessions (
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES users (id),
+        session_token VARCHAR(64),
+        csrf_token VARCHAR(64),
+        expires_at TIMESTAMP WITH TIME ZONE
+    );
+
     CREATE TABLE IF NOT EXISTS tasks (
         id SERIAL PRIMARY KEY,
         user_id INT REFERENCES users (id),
