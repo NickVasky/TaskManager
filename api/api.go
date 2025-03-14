@@ -8,20 +8,62 @@ import (
 	"time"
 )
 
-var patternMethods = map[string]string{
-	"/users/register":  http.MethodPost,
-	"/users/login":     http.MethodPost,
-	"/users/logout":    http.MethodPost,
-	"/tasks/protected": http.MethodGet,
+type Route struct {
+	Pattern string
+	Method  string
+	Handler func(http.ResponseWriter, *http.Request)
+}
+
+var routes = []Route{
+	{
+		Pattern: "/api/auth/register",
+		Method:  http.MethodPost,
+		Handler: Chain(register, mw_errorRecovery)},
+	{
+		Pattern: "/api/auth/login",
+		Method:  http.MethodPost,
+		Handler: Chain(login, mw_errorRecovery)},
+	{
+		Pattern: "/api/auth/logout",
+		Method:  http.MethodPost,
+		Handler: Chain(logout, mw_auth, mw_errorRecovery)},
+	{
+		Pattern: "/api/tasks/protected",
+		Method:  http.MethodGet,
+		Handler: Chain(protected, mw_auth, mw_errorRecovery)},
+	{
+		Pattern: "/signin",
+		Method:  http.MethodGet,
+		Handler: Chain(signIn, mw_errorRecovery)},
+	{
+		Pattern: "/dashboard",
+		Method:  http.MethodGet,
+		Handler: Chain(dashboard, mw_errorRecovery)},
+}
+
+func BuildMux() *http.ServeMux {
+	mux := http.NewServeMux()
+	for _, r := range routes {
+		pattern := fmt.Sprintf("%s %s", r.Method, r.Pattern)
+		mux.HandleFunc(pattern, r.Handler)
+	}
+	return mux
 }
 
 func Serve() {
-	http.HandleFunc("/users/register", Chain(register, mw_methodCheck, mw_errorRecovery))
-	http.HandleFunc("/users/login", Chain(login, mw_methodCheck, mw_errorRecovery))
-	http.HandleFunc("/users/logout", Chain(logout, mw_auth, mw_methodCheck, mw_errorRecovery))
-	http.HandleFunc("/tasks/protected", Chain(protected, mw_auth, mw_methodCheck, mw_errorRecovery))
+	mux := BuildMux()
+	fs := http.FileServer(http.Dir("templates"))
+	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", mux)
+}
+
+func signIn(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "templates/signin.html")
+}
+
+func dashboard(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "templates/dashboard.html")
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +126,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := checkPassword(password, user.Password); err != nil {
-		err := http.StatusOK
+		err := http.StatusNotFound
 		http.Error(w, "Bad password", err)
 		return
 	}
@@ -102,6 +144,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_token",
 		Value:    session.SessionToken,
+		Path:     "/api",
 		Expires:  session.ExpiresAt.Time,
 		HttpOnly: true,
 	})
@@ -109,6 +152,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "csrf_token",
 		Value:    session.CsrfToken,
+		Path:     "/api",
 		Expires:  session.ExpiresAt.Time,
 		HttpOnly: false,
 	})
@@ -128,6 +172,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_token",
 		Value:    "",
+		Path:     "/api",
 		Expires:  expirationTime,
 		HttpOnly: true,
 	})
@@ -135,6 +180,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "csrf_token",
 		Value:    "",
+		Path:     "/api",
 		Expires:  expirationTime,
 		HttpOnly: false,
 	})

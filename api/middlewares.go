@@ -35,6 +35,7 @@ func mw_auth(f http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+/*
 func mw_methodCheck(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != patternMethods[r.Pattern] {
@@ -45,6 +46,7 @@ func mw_methodCheck(f http.HandlerFunc) http.HandlerFunc {
 		f(w, r)
 	}
 }
+*/
 
 func mw_errorRecovery(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
