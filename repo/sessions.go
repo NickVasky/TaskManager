@@ -67,7 +67,7 @@ func (r *SessionRepo) GetByUserId(user_id int) (*SessionEntity, error) {
 	return &s, nil
 }
 
-func (r *SessionRepo) GetByTokens(sessionToken, csrfToken string) (*SessionEntity, error) {
+func (r *SessionRepo) GetByToken(sessionToken string) (*SessionEntity, error) {
 	query := `
 		SELECT
 			id,
@@ -76,11 +76,11 @@ func (r *SessionRepo) GetByTokens(sessionToken, csrfToken string) (*SessionEntit
 			csrf_token,
 			expires_at
 		FROM sessions
-		WHERE session_token = $1 AND csrf_token = $2;
+		WHERE session_token = $1;
 	`
 	var s SessionEntity
 
-	err := r.Db.QueryRow(query, sessionToken, csrfToken).Scan(
+	err := r.Db.QueryRow(query, sessionToken).Scan(
 		&s.Id,
 		&s.UserId,
 		&s.SessionToken,
